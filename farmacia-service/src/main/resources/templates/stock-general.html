@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{/fragments/head :: head(title='Stock General')}"></head>
+
+<style>
+    table th, table td {
+        border-right: 1px solid #dee2e6;
+        vertical-align: middle;
+    }
+    table th:last-child, table td:last-child {
+        border-right: none;
+    }
+
+    .stock-bajo {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .stock-normal {
+        color: #198754;
+        font-weight: bold;
+    }
+</style>
+
+<body>
+<div class="container-fluid mt-4 px-4">
+
+    <!-- ===== TÍTULO ===== -->
+    <h3 class="fw-bold mb-4">📦 Read Stock General</h3>
+
+    <!-- ===== MENSAJES ===== -->
+    <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <!-- ===== BARRA SUPERIOR ===== -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-center">
+
+                <!-- Buscador -->
+                <div class="col-md-4">
+                    <input type="text" id="searchInput"
+                           class="form-control"
+                           placeholder="🔍 Buscar medicamento o sede">
+                </div>
+
+                <!-- Filtros -->
+                <div class="col-md-6">
+                    <div class="row g-2">
+                        <div class="col">
+                            <select id="sedeFilter" class="form-select">
+                                <option value="">Todas las sedes</option>
+                                <option th:each="sede : ${sedes}"
+                                        th:value="${sede.idSede}"
+                                        th:text="${sede.nombre}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col">
+                            <select id="medFilter" class="form-select">
+                                <option value="">Todos los medicamentos</option>
+                                <option th:each="med : ${medicamentos}"
+                                        th:value="${med.idMedicamento}"
+                                        th:text="${med.nombre}">
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contador -->
+                <div class="col-md-2 text-end">
+                    <span class="badge bg-secondary">
+                        Total: <span th:text="${#lists.size(medicamentos)}"></span>
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TABLA ===== -->
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+
+            <table class="table table-striped table-hover align-middle" id="stockTable">
+                <thead class="table-light">
+                <tr>
+                    <th>Medicamento</th>
+                    <th>Sede</th>
+                    <th class="text-end">Stock</th>
+                    <th class="text-center">Estado</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="med : ${medicamentos}"
+				    th:data-sede-id="${med.sede.idSede}"
+                    th:data-med-id="${med.idMedicamento}">
+
+                    <td th:text="${med.nombre}"></td>
+
+                    <td th:text="${med.nombreSede}"></td>
+
+                    <td class="text-end"
+                        th:classappend="${med.stockTotal &lt;= 10} ? 'stock-bajo' : 'stock-normal'"
+                        th:text="${med.stockTotal}">
+                    </td>
+
+                    <td class="text-center">
+                        <span class="badge"
+                              th:classappend="${med.stockTotal &lt;= 10}
+                              ? 'bg-danger'
+                              : 'bg-success'"
+                              th:text="${med.stockTotal &lt;= 10}
+                              ? 'Stock Bajo'
+                              : 'Stock Normal'">
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <!-- ===== NOTA ===== -->
+    <div class="alert alert-info mt-4">
+        💡 <strong>Nota:</strong> El stock mostrado corresponde a la suma de todos los lotes activos por sede.
+    </div>
+
+    <!-- ===== REPORTES ===== -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-body text-center">
+            <h6 class="fw-bold mb-3">📄 Descargar reportes</h6>
+
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a href="/gestor/reportes/stock-sede/pdf" class="btn btn-outline-primary btn-sm">
+                    📥 Stock por Sede
+                </a>
+                <a href="/gestor/reportes/stock-medicamento/pdf" class="btn btn-outline-success btn-sm">
+                    📥 Stock por Medicamento
+                </a>
+                <a href="/gestor/reportes/notificaciones/pdf" class="btn btn-outline-warning btn-sm">
+                    📥 Notificaciones
+                </a>
+                <a href="/gestor/reportes/ordenes/pdf" class="btn btn-outline-info btn-sm">
+                    📥 Órdenes
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function filterTable() {
+        const sedeId = document.getElementById('sedeFilter').value;
+        const medId = document.getElementById('medFilter').value;
+        const search = document.getElementById('searchInput').value.toLowerCase();
+
+        document.querySelectorAll('#stockTable tbody tr').forEach(row => {
+            const rowSedeId = row.dataset.sedeId;
+            const rowMedId = row.dataset.medId;
+            const text = row.textContent.toLowerCase();
+
+            const matchesSede = !sedeId || rowSedeId === sedeId;
+            const matchesMed = !medId || rowMedId === medId;
+            const matchesSearch = text.includes(search);
+
+            row.style.display = (matchesSede && matchesMed && matchesSearch)
+                ? ''
+                : 'none';
+        });
+    }
+
+    document.getElementById('sedeFilter').addEventListener('change', filterTable);
+    document.getElementById('medFilter').addEventListener('change', filterTable);
+    document.getElementById('searchInput').addEventListener('keyup', filterTable);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+# Maven
+target/
+*.jar
+*.war
+
+# Maven wrapper JAR (dentro de cada módulo)
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE - Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# IDE - NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.gradle/
+build/
+!**/src/**/build/
+
+# IDE - VS Code
+.vscode/
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Ayuda
+HELP.md
+
+# Proyecto
+/bin
+.metadata/
+.claude

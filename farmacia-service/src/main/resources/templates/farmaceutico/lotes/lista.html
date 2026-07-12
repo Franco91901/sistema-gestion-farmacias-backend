@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Lotes - Sistema Farmacéutico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<!-- Modal Retirar Lotes Vencidos -->
+<div class="modal fade" id="modalRetirarVencidos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Retirar lotes vencidos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p>Esta acción realizará lo siguiente:</p>
+
+                <ul class="list-group mb-3">
+                    <li class="list-group-item">
+                        <i class="bi bi-x-circle text-danger me-1"></i>
+                        Eliminará <strong>todos los lotes vencidos</strong>
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-graph-down text-danger me-1"></i>
+                        Restará el stock correspondiente del total
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-arrow-repeat text-secondary me-1"></i>
+                        Esta acción <strong>no se puede deshacer</strong>
+                    </li>
+                </ul>
+
+                <p class="text-muted small mb-0">
+                    Use esta opción solo cuando esté seguro de retirar definitivamente
+                    los productos vencidos del sistema.
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <!-- ESTE botón SÍ envía el form -->
+                <button type="submit"
+                        form="formRetirarVencidos"
+                        class="btn btn-warning">
+                    <i class="bi bi-check-circle"></i> Confirmar retiro
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Eliminar Lote -->
+<div class="modal fade" id="modalEliminarLote" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p>Está a punto de eliminar el siguiente lote:</p>
+
+                <ul class="list-group mb-3">
+                    <li class="list-group-item">
+                        <strong>Lote:</strong> <span id="modalCodigoLote"></span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Medicamento:</strong> <span id="modalMedicamento"></span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Stock a retirar:</strong>
+                        <span class="badge bg-danger" id="modalStock"></span>
+                    </li>
+                </ul>
+
+                <p class="text-muted small mb-0">
+                    Esta acción eliminará el lote y restará el stock total del medicamento.
+                    <br>Esta acción no se puede deshacer.
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <a id="btnConfirmarEliminarLote" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Eliminar Lote
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<body>
+    <div class="container mt-4">
+        <!-- Título -->
+        <h2 class="mb-4">
+            <i class="bi bi-box-seam"></i> Gestión de Lotes
+            <span th:if="${medicamento}" class="text-muted fs-5">
+                - <span th:text="${medicamento.nombre}"></span>
+            </span>
+        </h2>
+        
+        <!-- Mensajes -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <!-- Barra de acciones -->
+        <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+            <div>
+                <a th:href="@{/farmaceutico/lotes/nuevo}" class="btn btn-primary me-2">
+                    <i class="bi bi-plus-circle"></i> Nuevo Lote
+                </a>
+				<form th:action="@{/farmaceutico/lotes/retirar-vencidos}"
+				      method="post"
+				      id="formRetirarVencidos"
+				      class="d-inline">
+				</form>
+				    
+					  <button type="button"
+					          class="btn btn-warning me-2"
+					          data-bs-toggle="modal"
+					          data-bs-target="#modalRetirarVencidos">
+					      <i class="bi bi-exclamation-triangle me-1"></i> Retirar Vencidos
+					  </button>
+
+				</form>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="btn-group" role="group">
+                <a th:href="@{/farmaceutico/lotes}" 
+                   class="btn btn-outline-secondary"
+                   th:classappend="${tipo == null} ? 'active' : ''">
+                    Todos
+                </a>
+                <a th:href="@{/farmaceutico/lotes/proximos-caducar}" 
+                   class="btn btn-outline-warning"
+                   th:classappend="${tipo == 'proximos_caducar'} ? 'active' : ''">
+                    <i class="bi bi-exclamation-triangle"></i> Próximos a Caducar
+                </a>
+                <a th:href="@{/farmaceutico/lotes/caducados}" 
+                   class="btn btn-outline-danger"
+                   th:classappend="${tipo == 'caducados'} ? 'active' : ''">
+                    <i class="bi bi-x-octagon"></i> Caducados
+                </a>
+            </div>
+        </div>
+        
+        <!-- Información del medicamento (si se está filtrando) -->
+        <div th:if="${medicamento}" class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-capsule"></i> Medicamento: <span th:text="${medicamento.nombre}"></span>
+                </h5>
+                <p class="card-text" th:text="${medicamento.descripcion}"></p>
+                <div class="d-flex gap-3">
+                    <span class="badge bg-primary">
+                        Stock Total: <span th:text="${medicamento.stockTotal}"></span>
+                    </span>
+                    <span th:if="${medicamento.bajoStock}" class="badge bg-warning">Bajo Stock</span>
+                    <span th:unless="${medicamento.bajoStock}" class="badge bg-success">Stock Normal</span>
+                </div>
+                <a th:href="@{/farmaceutico/lotes}" class="btn btn-sm btn-outline-secondary mt-2">
+                    <i class="bi bi-x-circle"></i> Quitar filtro
+                </a>
+            </div>
+        </div>
+        
+        <!-- Tabla de lotes -->
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Código Lote</th>
+                        <th>Medicamento</th>
+                        <th>Fecha Caducidad</th>
+                        <th>Stock Lote</th>
+                        <th>Estado</th>
+                        <th>Días Restantes</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="lote : ${lotes}">
+                        <td>
+                            <span class="badge bg-secondary" th:text="${lote.codigoLote}">LOT-001</span>
+                        </td>
+                        <td>
+                            <a th:href="@{/farmaceutico/lotes/medicamento/} + ${lote.idMedicamento}" 
+                               class="text-decoration-none">
+                                <span th:text="${lote.nombreMedicamento}">Paracetamol</span>
+                            </a>
+                        </td>
+                        <td th:text="${#temporals.format(lote.fechaCaducidad, 'dd/MM/yyyy')}">31/12/2024</td>
+                        <td>
+                            <span class="badge" 
+                                  th:classappend="${lote.stockLote < 10} ? 'bg-warning' : 'bg-success'"
+                                  th:text="${lote.stockLote}">100</span>
+                        </td>
+                        <td>
+                            <span th:if="${lote.proximoCaducar}" class="badge bg-warning">Próximo a Caducar</span>
+                            <span th:unless="${lote.proximoCaducar}" class="badge bg-success">Vigente</span>
+                        </td>
+                        <td>
+                            <span th:if="${lote.diasParaCaducar < 0}" class="badge bg-danger">
+                                Caducado
+                            </span>
+                            <span th:unless="${lote.diasParaCaducar < 0}" 
+                                  th:classappend="${lote.diasParaCaducar <= 30} ? 'text-warning' : 'text-success'"
+                                  th:text="${lote.diasParaCaducar} + ' días'">
+                                150 días
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a th:href="@{/farmaceutico/lotes/editar/} + ${lote.idLote}" 
+                                   class="btn btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                
+                                <!-- Modal para retirar stock -->
+                                <button type="button" class="btn btn-outline-warning" 
+                                        data-bs-toggle="modal" 
+                                        th:attr="data-bs-target='#retirarModal' + ${lote.idLote}"
+                                        title="Retirar Stock">
+                                    <i class="bi bi-dash-circle"></i>
+                                </button>
+                                
+								<button type="button"
+								        class="btn btn-outline-danger btn-eliminar-lote"
+								        title="Eliminar"
+								        th:data-id="${lote.idLote}"
+								        th:data-codigo="${lote.codigoLote}"
+								        th:data-medicamento="${lote.nombreMedicamento}"
+								        th:data-stock="${lote.stockLote}">
+								    <i class="bi bi-trash"></i>
+								</button>
+                            </div>
+                            
+                            <!-- Modal para retirar stock (individual por lote) -->
+                            <div class="modal fade" th:id="'retirarModal' + ${lote.idLote}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Retirar Stock</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form th:action="@{/farmaceutico/lotes/} + ${lote.idLote} + '/retirar'" 
+                                              method="post">
+                                            <div class="modal-body">
+                                                <p>Lote: <strong th:text="${lote.codigoLote}"></strong></p>
+                                                <p>Medicamento: <strong th:text="${lote.nombreMedicamento}"></strong></p>
+                                                <p>Stock disponible: <span class="badge bg-success" 
+                                                       th:text="${lote.stockLote}"></span></p>
+                                                
+                                                <div class="mb-3">
+                                                    <label for="cantidad" class="form-label">Cantidad a retirar:</label>
+                                                    <input type="number" class="form-control" id="cantidad" 
+                                                           name="cantidad" min="1" 
+                                                           th:attr="max=${lote.stockLote}"
+                                                           required>
+                                                    <div class="form-text">
+                                                        Máximo: <span th:text="${lote.stockLote}"></span> unidades
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" 
+                                                        data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-warning">
+                                                    <i class="bi bi-dash-circle"></i> Retirar Stock
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Si no hay lotes -->
+                    <tr th:if="${#lists.isEmpty(lotes)}">
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="bi bi-box display-6"></i>
+                            <p class="mt-2">No hay lotes registrados</p>
+                            <a th:href="@{/farmaceutico/lotes/nuevo}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Crear primer lote
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Estadísticas -->
+		<div class="row mt-4">
+		    <div class="col-md-3">
+		        <div class="card text-white bg-primary">
+		            <div class="card-body text-center">
+		                <h5 class="card-title" th:text="${#lists.size(lotes)}">0</h5>
+		                <p class="card-text">Total Lotes</p>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-white bg-warning">
+		            <div class="card-body text-center">
+		                <h5 class="card-title" 
+		                    th:text="${#lists.isEmpty(lotes) ? 0 : #lists.size(lotes.?[proximoCaducar == true])}">0</h5>
+		                <p class="card-text">Próximos a Caducar</p>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-white bg-danger">
+		            <div class="card-body text-center">
+		                <h5 class="card-title" 
+		                    th:text="${#lists.isEmpty(lotes) ? 0 : #lists.size(lotes.?[diasParaCaducar < 0])}">0</h5>
+		                <p class="card-text">Caducados</p>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-white bg-success">
+		            <div class="card-body text-center">
+		                <h5 class="card-title" 
+		                    th:text="${#lists.isEmpty(lotes) ? 0 : #aggregates.sum(lotes.![stockLote])}">0</h5>
+		                <p class="card-text">Stock Total</p>
+		            </div>
+		        </div>
+		    </div>
+		</div>
+        
+        <!-- Menú de navegación -->
+        <div class="mt-4">
+            <a th:href="@{/farmaceutico/medicamentos}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-capsule"></i> Volver a Medicamentos
+            </a>
+            <a th:href="@{/farmaceutico/stock}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-graph-up"></i> Ver Stock Consolidado
+            </a>
+            <a th:href="@{/farmaceutico/notificaciones}" class="btn btn-outline-secondary">
+                <i class="bi bi-bell"></i> Notificaciones
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+	
+	<script>
+	document.addEventListener('DOMContentLoaded', function () {
+	    const modal = new bootstrap.Modal(
+	        document.getElementById('modalEliminarLote')
+	    );
+
+	    const codigoSpan = document.getElementById('modalCodigoLote');
+	    const medicamentoSpan = document.getElementById('modalMedicamento');
+	    const stockSpan = document.getElementById('modalStock');
+	    const btnConfirmar = document.getElementById('btnConfirmarEliminarLote');
+
+	    document.querySelectorAll('.btn-eliminar-lote').forEach(btn => {
+	        btn.addEventListener('click', function () {
+	            const id = this.dataset.id;
+	            const codigo = this.dataset.codigo;
+	            const medicamento = this.dataset.medicamento;
+	            const stock = this.dataset.stock;
+
+	            codigoSpan.textContent = codigo;
+	            medicamentoSpan.textContent = medicamento;
+	            stockSpan.textContent = stock;
+
+	            btnConfirmar.href = '/farmaceutico/lotes/eliminar/' + id;
+
+	            modal.show();
+	        });
+	    });
+	});
+	</script>
+
+</body>
+</html>

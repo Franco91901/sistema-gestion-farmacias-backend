@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{/fragments/head :: head(title='Órdenes - Gestor')}"></head>
+
+<style>
+    table th,
+    table td {
+        border-right: 1px solid #dee2e6;
+        vertical-align: middle;
+    }
+
+    table th:last-child,
+    table td:last-child {
+        border-right: none;
+    }
+</style>
+
+<body>
+<div class="container-fluid mt-4 px-4">
+
+    <!-- ===== TÍTULO ===== -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold">📦 Órdenes Generadas</h3>
+        <span class="text-muted">Gestión de órdenes de abastecimiento</span>
+    </div>
+
+    <!-- ===== MENSAJES ===== -->
+    <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <!-- ===== BARRA SUPERIOR ===== -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row align-items-center">
+
+                <div class="col-md-4">
+                    <input type="text" id="searchInput"
+                           class="form-control"
+                           placeholder="🔍 Buscar orden...">
+                </div>
+
+                <div class="col-md-8 text-end">
+                    <span class="badge bg-secondary">
+                        Total: <span th:text="${#lists.size(ordenes)}"></span>
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TABLA ===== -->
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+
+            <table class="table table-hover align-middle" id="ordenTable">
+                <thead class="table-light">
+                <tr>
+                    <th>ID Orden</th>
+                    <th>Fecha</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:if="${ordenes.empty}">
+                    <td colspan="4" class="text-center text-muted py-4">
+                        📭 No tienes órdenes generadas
+                    </td>
+                </tr>
+
+                <tr th:each="orden : ${ordenes}">
+                    <td th:text="${orden.idOrden}"></td>
+
+                    <td th:text="${#temporals.format(orden.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+
+                    <td class="text-center">
+                        <span class="badge bg-primary">
+                            PENDIENTE
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+                        <a th:href="@{/gestor/order/{id}(id=${orden.idOrden})}"
+                           class="btn btn-sm btn-outline-info me-1">
+                            👁 Ver
+                        </a>
+
+                        <form th:action="@{/gestor/ordenes/eliminar/{id}(id=${orden.idOrden})}"
+                              method="post"
+                              class="d-inline">
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('¿Eliminar esta orden?')">
+                                🗑 Eliminar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // 🔍 Búsqueda simple en tabla
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const value = this.value.toLowerCase();
+        document.querySelectorAll('#ordenTable tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(value)
+                ? ''
+                : 'none';
+        });
+    });
+</script>
+
+</body>
+</html>

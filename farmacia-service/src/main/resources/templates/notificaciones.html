@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{/fragments/head :: head(title='Notificaciones - Gestor')}"></head>
+<style>
+    /* Líneas verticales en la tabla */
+    table th,
+    table td {
+        border-right: 1px solid #dee2e6;
+    }
+
+    table th:last-child,
+    table td:last-child {
+        border-right: none;
+    }
+</style>
+
+
+<body>
+<div class="container-fluid mt-4 px-4">
+
+    <!-- ===== TÍTULO ===== -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold">🔔 Notificaciones</h3>
+        <span class="text-muted">Gestión y generación de órdenes</span>
+    </div>
+
+    <!-- ===== MENSAJES ===== -->
+    <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <!-- ===== BARRA DE ACCIONES ===== -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-center">
+
+                <div class="col-md-4">
+                    <input type="text" id="searchInput"
+                           class="form-control"
+                           placeholder="🔍 Buscar notificación...">
+                </div>
+
+                <div class="col-md-8 text-end">
+                    <span class="badge bg-secondary">
+                        Total: <span th:text="${#lists.size(notificaciones)}"></span>
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TABLA ===== -->
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+
+            <table class="table table-hover align-middle" id="notifTable">
+                <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Mensaje</th>
+                    <th>Fecha</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Acción</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="n : ${notificaciones}">
+                    <td th:text="${n.idNotificacion}"></td>
+
+                    <td th:text="${n.mensaje}"></td>
+
+                    <td th:text="${n.fechaFormateada}"></td>
+
+                    <td class="text-center">
+                        <span class="badge"
+                              th:classappend="${n.estado == 'RESUELTA'} ? 'bg-success' : 'bg-warning text-dark'"
+                              th:text="${n.estado ?: 'PENDIENTE'}">
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-info"
+                                data-bs-toggle="modal"
+                                th:data-bs-target="'#modal-' + ${n.idNotificacion}">
+                            👁 Ver
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== MODALES ===== -->
+<div th:each="n : ${notificaciones}"
+     class="modal fade"
+     th:id="'modal-' + ${n.idNotificacion}"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow">
+
+            <!-- ===== HEADER ===== -->
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                    🔔 Detalle de Notificación
+                    <span class="badge bg-secondary ms-2">
+                        #<span th:text="${n.idNotificacion}"></span>
+                    </span>
+                </h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+            </div>
+
+            <!-- ===== BODY ===== -->
+            <div class="modal-body">
+
+                <!-- INFO -->
+                <div class="card mb-3">
+                    <div class="card-body">
+
+                        <p class="mb-2">
+                            <strong>Mensaje:</strong><br>
+                            <span th:text="${n.mensaje}"></span>
+                        </p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <strong>Medicamento:</strong>
+                                </p>
+                                <span class="badge bg-primary"
+                                      th:text="${n.nombreMedicamento}">
+                                </span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <strong>Sede:</strong>
+                                </p>
+                                <span class="badge bg-info text-dark"
+                                      th:text="${n.nombreSede}">
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- FORM -->
+                <div class="card border-success">
+                    <div class="card-header fw-bold text-success">
+                        📦 Generar Orden de Abastecimiento
+                    </div>
+
+                    <div class="card-body">
+                        <form th:action="@{/gestor/ordenes/generar}"
+                              method="post">
+
+                            <input type="hidden"
+                                   name="idNotificacion"
+                                   th:value="${n.idNotificacion}">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    Cantidad a solicitar
+                                </label>
+                                <input type="number"
+                                       name="cantidad"
+                                       class="form-control"
+                                       min="1"
+                                       placeholder="Ingrese cantidad"
+                                       required>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        data-bs-dismiss="modal">
+                                    Cancelar
+                                </button>
+
+                                <button type="submit"
+                                        class="btn btn-success">
+                                   Generar Orden
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ===== FOOTER ===== -->
+            <div class="modal-footer small text-muted">
+                Sistema de Gestión de Inventarios
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // 🔍 Búsqueda simple en tabla
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const value = this.value.toLowerCase();
+        document.querySelectorAll('#notifTable tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(value)
+                ? ''
+                : 'none';
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${titulo} + ' - Sistema Farmacéutico'">Formulario Medicamento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                
+                <!-- Header con botón volver -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 th:text="${titulo}">
+                        <i class="bi bi-capsule"></i> Nuevo Medicamento
+                    </h2>
+                    <a th:href="@{/farmaceutico/medicamentos}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+                
+                <!-- Mensajes -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+                    <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <!-- Formulario -->
+                <div class="card">
+                    <div class="card-body">
+                        <form th:action="${modo == 'crear' ? '/farmaceutico/medicamentos/crear' : '/farmaceutico/medicamentos/actualizar/' + medicamento.idMedicamento}" 
+                              method="post" th:object="${medicamentoRequest}">
+                            
+                            <!-- ID oculto para edición -->
+                            <input type="hidden" th:if="${modo == 'editar'}" 
+                                   th:value="${medicamento.idSede}">
+										  
+                            <!-- Campo: Nombre -->
+                            <div class="mb-3">
+                                <label for="nombre" class="form-label">
+                                    <i class="bi bi-tag"></i> Nombre del Medicamento *
+                                </label>
+                                <input type="text" class="form-control" id="nombre" 
+                                       th:field="*{nombre}"
+                                       placeholder="Ej: Paracetamol 500mg"
+                                       required>
+                                <div class="form-text">
+                                    Nombre único para esta sede. Máx. 150 caracteres.
+                                </div>
+                                <div th:if="${#fields.hasErrors('nombre')}" class="text-danger">
+                                    <small th:errors="*{nombre}"></small>
+                                </div>
+                            </div>
+                            
+                            <!-- Campo: Descripción -->
+                            <div class="mb-3">
+                                <label for="descripcion" class="form-label">
+                                    <i class="bi bi-card-text"></i> Descripción
+                                </label>
+                                <textarea class="form-control" id="descripcion" 
+                                          th:field="*{descripcion}"
+                                          rows="3"
+                                          placeholder="Ej: Analgésico y antipirético para dolor leve a moderado"></textarea>
+                                <div class="form-text">
+                                    Información adicional sobre el medicamento. Máx. 255 caracteres.
+                                </div>
+                                <div th:if="${#fields.hasErrors('descripcion')}" class="text-danger">
+                                    <small th:errors="*{descripcion}"></small>
+                                </div>
+                            </div>
+                            
+                            <!-- Info de sede (solo lectura) -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-building"></i> Sede
+                                </label>
+								<input type="text" class="form-control" 
+								       th:value="${modo == 'crear' ? 
+								                 sedeId + ' (Asignada automáticamente)' : 
+								                 medicamento.idSede + ' - ' + medicamento.nombreSede}"
+								       readonly>
+                                <div class="form-text">
+                                    El medicamento se asociará automáticamente a esta sede.
+                                </div>
+                            </div>
+                            
+                            <!-- Botones -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <a th:href="@{/farmaceutico/medicamentos}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i>
+                                    <span th:text="${modo == 'crear' ? 'Crear Medicamento' : 'Actualizar Medicamento'}">
+                                        Crear Medicamento
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Información adicional -->
+                <div class="mt-4">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-info-circle"></i> Información importante
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Los medicamentos son únicos por sede (no puede haber duplicados)</li>
+                            <li>El stock inicial será 0. Debes crear lotes para agregar stock</li>
+                            <li>Las notificaciones de bajo stock se generan automáticamente</li>
+                        </ul>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Validación simple antes de enviar
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                const nombre = document.getElementById('nombre').value.trim();
+                if (!nombre) {
+                    e.preventDefault();
+                    alert('El nombre del medicamento es obligatorio');
+                    return false;
+                }
+                if (nombre.length > 150) {
+                    e.preventDefault();
+                    alert('El nombre no puede exceder 150 caracteres');
+                    return false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

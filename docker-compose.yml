@@ -1,0 +1,173 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bd_farmacia
+    environment:
+      POSTGRES_DB: bd_farmacia
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    container_name: bd_auth
+    environment:
+      MYSQL_DATABASE: bd_auth
+      MYSQL_ROOT_PASSWORD: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pmysql"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7
+    container_name: bd_notificaciones
+    environment:
+      MONGO_INITDB_DATABASE: bd_notificaciones
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - EUREKA_INSTANCE_HOSTNAME=eureka-server
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:8761/ || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_auth?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=mysql
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - EUREKA_INSTANCE_HOSTNAME=auth-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    restart: on-failure
+
+  farmacia-service:
+    build: ./farmacia-service
+    container_name: farmacia-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/bd_farmacia
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - EUREKA_INSTANCE_HOSTNAME=farmacia-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    restart: on-failure
+
+  notificaciones-service:
+    build: ./notificaciones-service
+    container_name: notificaciones-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/bd_notificaciones
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - EUREKA_INSTANCE_HOSTNAME=notificaciones-service
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    restart: on-failure
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      farmacia-service:
+        condition: service_started
+    restart: on-failure
+
+  soap-service:
+    build: ./soapAnuncio-service
+    container_name: soap-service
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bd_auth?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  postgres_data:
+  mysql_data:
+  mongo_data:

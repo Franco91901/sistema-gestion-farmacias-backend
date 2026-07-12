@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{/fragments/head :: head(title='Detalle de Orden - Gestor')}"></head>
+
+<body>
+<div class="container mt-4">
+
+    <!-- ===== TÍTULO ===== -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body text-center">
+            <h3 class="fw-bold mb-1">📄 Detalle de la Orden</h3>
+            <p class="text-muted mb-0">
+                Información general y medicamentos solicitados
+            </p>
+        </div>
+    </div>
+
+    <!-- ===== ERROR ===== -->
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <!-- ===== DATOS DE LA ORDEN ===== -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">
+            🧾 Información de la Orden
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <p class="mb-1">
+                        <strong>N° Orden:</strong>
+                    </p>
+                    <span class="badge bg-primary fs-6">
+                        #<span th:text="${orden.idOrden}"></span>
+                    </span>
+                </div>
+
+                <div class="col-md-4">
+                    <p class="mb-1">
+                        <strong>Fecha:</strong>
+                    </p>
+                    <span th:text="${#temporals.format(orden.fecha, 'dd/MM/yyyy HH:mm')}"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <p class="mb-1">
+                        <strong>Gestor:</strong>
+                    </p>
+                    <span th:text="${nombreGestor}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DETALLES ===== -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">
+            📦 Detalle de Medicamentos
+        </div>
+
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                <tr>
+                    <th>Medicamento</th>
+                    <th class="text-center">Cantidad</th>
+                    <th class="text-center">Estado</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="detalle : ${detalles}">
+                    <td th:text="${detalle.nombreMedicamento}"></td>
+
+                    <td class="text-center fw-bold"
+                        th:text="${detalle.cantidad}">
+                    </td>
+
+                    <td class="text-center">
+                        <span class="badge bg-warning"
+                              th:text="${detalle.estado}">
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== BOTÓN ===== -->
+    <div class="text-center">
+        <a href="/gestor/ordenes" class="btn btn-outline-secondary">
+            ⬅ Volver a órdenes
+        </a>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

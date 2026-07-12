@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Medicamentos - Sistema Farmacéutico</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<!-- Modal Confirmar Eliminación -->
+<div class="modal fade" id="modalEliminarMedicamento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="modal-body">
+                <p>¿Está seguro que desea eliminar el medicamento:</p>
+                <p class="fw-bold text-danger" id="nombreMedicamento"></p>
+                <p class="text-muted small mb-0">
+                    Esta acción no se puede deshacer.
+                </p>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <a id="btnConfirmarEliminar" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Eliminar
+                </a>
+            </div>
+            
+        </div>
+    </div>
+</div>
+<body>
+    <div class="container mt-4">
+        <!-- Título -->
+        <h2 class="mb-4">
+            <i class="bi bi-capsule"></i> Gestión de Medicamentos
+        </h2>
+        
+        <!-- Mensajes -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <!-- Barra de acciones -->
+        <div class="d-flex justify-content-between mb-3">
+            <a th:href="@{/farmaceutico/medicamentos/nuevo}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Medicamento
+            </a>
+            
+            <!-- Buscador -->
+            <form th:action="@{/farmaceutico/medicamentos/buscar}" method="get" class="d-flex">
+                <input type="text" name="nombre" class="form-control me-2" placeholder="Buscar medicamento..." 
+                       th:value="${terminoBusqueda}">
+                <button type="submit" class="btn btn-outline-secondary">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Tabla de medicamentos -->
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="med : ${medicamentos}">
+                        <td th:text="${med.nombre}">Paracetamol 500mg</td>
+                        <td th:text="${med.descripcion}">Analgésico</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a th:href="@{/farmaceutico/medicamentos/editar/} + ${med.idMedicamento}" 
+                                   class="btn btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a th:href="@{/farmaceutico/lotes/medicamento/} + ${med.idMedicamento}" 
+                                   class="btn btn-outline-info" title="Ver Lotes">
+                                    <i class="bi bi-boxes"></i>
+                                </a>
+                                
+                                <!-- BOTÓN ELIMINAR CON DATA ATTRIBUTES -->
+                                <button type="button" class="btn btn-outline-danger btn-eliminar-medicamento" 
+                                        th:if="${med.cantidadLotes == null or med.cantidadLotes == 0}"
+                                        th:data-id="${med.idMedicamento}"
+                                        th:data-nombre="${med.nombre}"
+                                        title="Eliminar medicamento">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                
+                                <!-- BOTÓN DESHABILITADO (si tiene lotes) -->
+                                <button type="button" class="btn btn-outline-secondary" 
+                                        th:if="${med.cantidadLotes != null and med.cantidadLotes > 0}"
+                                        title="No se puede eliminar - Tiene lotes activos"
+                                        disabled>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(medicamentos)}">
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox display-6"></i>
+                            <p class="mt-2">No hay medicamentos registrados</p>
+                            <a th:href="@{/farmaceutico/medicamentos/nuevo}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Crear primer medicamento
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Información de sede -->
+        <div class="mt-3 text-muted small">
+			 Total: <span th:text="${#lists.size(medicamentos)}">0</span> medicamentos
+        </div>
+        
+        <!-- Menú de navegación -->
+        <div class="mt-4">
+            <a th:href="@{/farmaceutico/lotes}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-box"></i> Ir a Lotes
+            </a>
+            <a th:href="@{/farmaceutico/stock}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-graph-up"></i> Ver Stock General
+            </a>
+            <a th:href="@{/farmaceutico/notificaciones}" class="btn btn-outline-secondary">
+                <i class="bi bi-bell"></i> Notificaciones
+            </a>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+	<script>
+	document.addEventListener('DOMContentLoaded', function () {
+	    const modalEliminar = new bootstrap.Modal(
+	        document.getElementById('modalEliminarMedicamento')
+	    );
+
+	    const nombreSpan = document.getElementById('nombreMedicamento');
+	    const btnConfirmar = document.getElementById('btnConfirmarEliminar');
+
+	    document.querySelectorAll('.btn-eliminar-medicamento').forEach(btn => {
+	        btn.addEventListener('click', function () {
+	            const id = this.dataset.id;
+	            const nombre = this.dataset.nombre;
+
+	            nombreSpan.textContent = nombre;
+	            btnConfirmar.href = '/farmaceutico/medicamentos/eliminar/' + id;
+
+	            modalEliminar.show();
+	        });
+	    });
+	});
+	</script>
+
+</body>
+</html>

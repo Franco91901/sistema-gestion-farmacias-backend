@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle Usuario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            Detalle del Usuario
+        </div>
+        <div class="card-body">
+            <p><strong>Nombre:</strong> <span th:text="${usuario.nombre}"></span></p>
+            <p><strong>Email:</strong> <span th:text="${usuario.email}"></span></p>
+            <p><strong>Teléfono:</strong> <span th:text="${usuario.telefono}"></span></p>
+            <p><strong>Rol:</strong> <span th:text="${usuario.rol}"></span></p>
+            <p><strong>Sede:</strong> <span th:text="${usuario.sede}"></span></p>
+        </div>
+        <div class="card-footer">
+            <a href="/admin/usuarios" class="btn btn-secondary">Volver</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${titulo} + ' - Sistema Farmacéutico'">Formulario Lote</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 th:text="${titulo}">
+                        <i class="bi bi-box-seam"></i> Nuevo Lote
+                    </h2>
+                    <a th:href="@{/farmaceutico/lotes}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+                
+                <!-- Mensajes -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+                    <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <!-- Formulario -->
+                <div class="card">
+                    <div class="card-body">
+                        <form th:action="${modo == 'crear' ? '/farmaceutico/lotes/crear' : '/farmaceutico/lotes/actualizar/' + lote.idLote}" 
+                              method="post" th:object="${loteRequest}">
+                            
+                            <!-- ID oculto para edición -->
+                            <input type="hidden" th:if="${modo == 'editar'}" 
+                                   th:value="${lote.idLote}">
+                            
+                            <div class="row">
+                                <!-- Columna 1: Datos básicos -->
+                                <div class="col-md-6">
+                                    <!-- Campo: Medicamento (select) -->
+									<div class="mb-3">
+									    <label for="idMedicamento" class="form-label">
+									        <i class="bi bi-capsule"></i> Medicamento *
+									    </label>
+									    
+									    <!-- Si está en modo edición, mostrar como texto + campo hidden -->
+									    <div th:if="${modo == 'editar'}">
+									        <!-- Mostrar como texto (no editable) -->
+									        <div class="form-control bg-light">
+									            <strong th:text="${lote.nombreMedicamento}"></strong>
+									            <small class="text-muted"> (ID: <span th:text="${lote.idMedicamento}"></span>)</small>
+									        </div>
+									        <!-- Campo hidden para enviar el valor -->
+									        <input type="hidden" 
+									               th:name="idMedicamento" 
+									               th:value="${lote.idMedicamento}" />
+									    </div>
+									    
+									    <!-- Si está en modo crear, mostrar el select normal -->
+									    <select th:if="${modo == 'crear'}" 
+									            class="form-select" 
+									            id="idMedicamento" 
+									            th:field="*{idMedicamento}"
+									            required>
+									        <option value="">Seleccione un medicamento</option>
+									        <option th:each="med : ${medicamentos}"
+									                th:value="${med.idMedicamento}"
+									                th:text="${med.nombre} + ' (Stock: ' + ${med.stockTotal} + ')'">
+									        </option>
+									    </select>
+									    
+									    <div class="form-text">
+									        Solo se muestran medicamentos de esta sede.
+									    </div>
+									    <div th:if="${#fields.hasErrors('idMedicamento')}" class="text-danger">
+									        <small th:errors="*{idMedicamento}"></small>
+									    </div>
+									</div>
+                                    
+                                    <!-- Campo: Código Lote -->
+                                    <div class="mb-3">
+                                        <label for="codigoLote" class="form-label">
+                                            <i class="bi bi-upc-scan"></i> Código de Lote *
+                                        </label>
+                                        <input type="text" class="form-control" id="codigoLote" 
+                                               th:field="*{codigoLote}"
+                                               placeholder="Ej: LOT-2024-001"
+                                               required>
+                                        <div class="form-text">
+                                            Código único del lote. Ej: LOT-2024-001, FAB-2024-05, etc.
+                                        </div>
+                                        <div th:if="${#fields.hasErrors('codigoLote')}" class="text-danger">
+                                            <small th:errors="*{codigoLote}"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Columna 2: Stock y fecha -->
+                                <div class="col-md-6">
+                                    <!-- Campo: Fecha Caducidad -->
+                                    <div class="mb-3">
+                                        <label for="fechaCaducidad" class="form-label">
+                                            <i class="bi bi-calendar-x"></i> Fecha de Caducidad *
+                                        </label>
+                                        <input type="date" class="form-control" id="fechaCaducidad" 
+                                               th:field="*{fechaCaducidad}"
+                                               th:attr="min=${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}"
+                                               required>
+                                        <div class="form-text">
+                                            No puede ser una fecha pasada.
+                                        </div>
+                                        <div th:if="${#fields.hasErrors('fechaCaducidad')}" class="text-danger">
+                                            <small th:errors="*{fechaCaducidad}"></small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Campo: Stock Lote -->
+                                    <div class="mb-3">
+                                        <label for="stockLote" class="form-label">
+                                            <i class="bi bi-box"></i> Stock del Lote *
+                                        </label>
+                                        <input type="number" class="form-control" id="stockLote" 
+                                               th:field="*{stockLote}"
+                                               min="1" 
+                                               placeholder="Ej: 100"
+                                               required>
+                                        <div class="form-text">
+                                            Cantidad de unidades en este lote. Mínimo 1 unidad.
+                                        </div>
+                                        <div th:if="${#fields.hasErrors('stockLote')}" class="text-danger">
+                                            <small th:errors="*{stockLote}"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información adicional (solo en edición) -->
+                            <div th:if="${modo == 'editar' and lote != null}"> class="mt-3 p-3 bg-light rounded">
+                                <h6><i class="bi bi-info-circle"></i> Información actual del lote:</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Medicamento:</strong><br>
+                                        <span th:text="${lote.nombreMedicamento}"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Sede:</strong><br>
+                                        <span th:text="${lote.nombreSede}"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Estado:</strong><br>
+                                        <span th:if="${lote.proximoCaducar}" class="badge bg-warning">Próximo a Caducar</span>
+                                        <span th:unless="${lote.proximoCaducar}" class="badge bg-success">Vigente</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Botones -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <a th:href="@{/farmaceutico/lotes}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i>
+                                    <span th:text="${modo == 'crear' ? 'Crear Lote' : 'Actualizar Lote'}">
+                                        Crear Lote
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Información importante -->
+                <div class="mt-4">
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle"></i> Consideraciones al crear/editar lotes
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Al crear un lote, el <strong>stock total del medicamento se actualizará automáticamente</strong></li>
+                            <li>Al editar el stock de un lote, el stock total del medicamento se recalcula</li>
+                            <li>Si la fecha de caducidad está próxima (≤30 días), se generará una notificación automática</li>
+                            <li>Si el stock total del medicamento cae bajo el umbral (10 unidades), se generará notificación</li>
+                            <li>El código de lote debe ser único en el sistema</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Previsualización de días hasta caducidad -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="bi bi-calendar-check"></i> Calculadora de Caducidad
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <label for="fechaPreview" class="form-label">Ingresa una fecha para calcular días restantes:</label>
+                                <input type="date" class="form-control" id="fechaPreview" 
+                                       th:attr="min=${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-info w-100" onclick="calcularDias()">
+                                    <i class="bi bi-calculator"></i> Calcular
+                                </button>
+                            </div>
+                        </div>
+                        <div id="resultadoCalculo" class="mt-3" style="display: none;">
+                            <span class="badge" id="badgeEstado">Estado</span>
+                            <span class="ms-2" id="textoResultado">Resultado</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Calculadora de días hasta caducidad
+        function calcularDias() {
+            const fechaInput = document.getElementById('fechaPreview').value;
+            if (!fechaInput) {
+                alert('Por favor, selecciona una fecha');
+                return;
+            }
+            
+            const fechaCaducidad = new Date(fechaInput);
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            // Calcular diferencia en días
+            const diffTime = fechaCaducidad - hoy;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const resultadoDiv = document.getElementById('resultadoCalculo');
+            const badgeEstado = document.getElementById('badgeEstado');
+            const textoResultado = document.getElementById('textoResultado');
+            
+            resultadoDiv.style.display = 'block';
+            
+            if (diffDays < 0) {
+                badgeEstado.className = 'badge bg-danger';
+                badgeEstado.textContent = 'CADUCADO';
+                textoResultado.textContent = 'Esta fecha ya pasó. No se puede usar.';
+            } else if (diffDays <= 30) {
+                badgeEstado.className = 'badge bg-warning';
+                badgeEstado.textContent = 'PRÓXIMO A CADUCAR';
+                textoResultado.textContent = `Caduca en ${diffDays} días. Se generará notificación.`;
+            } else {
+                badgeEstado.className = 'badge bg-success';
+                badgeEstado.textContent = 'VIGENTE';
+                textoResultado.textContent = `Caduca en ${diffDays} días.`;
+            }
+        }
+        
+        // Validación antes de enviar
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                // Validar que todos los campos requeridos estén completos
+                const medicamento = document.getElementById('idMedicamento').value;
+                const codigoLote = document.getElementById('codigoLote').value.trim();
+                const fechaCaducidad = document.getElementById('fechaCaducidad').value;
+                const stockLote = document.getElementById('stockLote').value;
+                
+                if (!medicamento || !codigoLote || !fechaCaducidad || !stockLote) {
+                    e.preventDefault();
+                    alert('Todos los campos marcados con * son obligatorios');
+                    return false;
+                }
+                
+                // Validar que la fecha no sea pasada
+                const fechaCad = new Date(fechaCaducidad);
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                
+                if (fechaCad < hoy) {
+                    e.preventDefault();
+                    alert('La fecha de caducidad no puede ser una fecha pasada');
+                    return false;
+                }
+                
+                // Validar stock mínimo
+                if (parseInt(stockLote) < 1) {
+                    e.preventDefault();
+                    alert('El stock del lote debe ser al menos 1 unidad');
+                    return false;
+                }
+            });
+            
+            // Establecer fecha mínima como hoy
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaCaducidad').min = hoy;
+            document.getElementById('fechaPreview').value = hoy;
+        });
+    </script>
+</body>
+</html>

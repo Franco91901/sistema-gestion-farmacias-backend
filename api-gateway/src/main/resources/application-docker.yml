@@ -1,0 +1,32 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: AUTH-SERVICE-AUTH
+              uri: http://auth-service:8081
+              predicates:
+                - Path=/api/auth/**
+
+            - id: AUTH-SERVICE-USUARIOS
+              uri: http://auth-service:8081
+              predicates:
+                - Path=/api/usuarios/**
+
+            - id: AUTH-SERVICE-ADMIN
+              uri: http://auth-service:8081
+              predicates:
+                - Path=/api/admin/**
+
+            - id: FARMACIA-SERVICE
+              uri: http://farmacia-service:8082
+              predicates:
+                - Path=/api/**
+
+eureka:
+  instance:
+    hostname: api-gateway
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka

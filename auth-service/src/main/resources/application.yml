@@ -1,0 +1,34 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/bd_auth?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+    username: root
+    password: mysql
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+
+application:
+  security:
+    jwt:
+      secret-key: farmacia-daw2-cibertec-proyecto-secret-key-2024-segura
+      expiration: 60
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    hostname: localhost

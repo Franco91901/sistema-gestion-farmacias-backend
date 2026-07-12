@@ -1,0 +1,44 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: GATEWAY
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: AUTH-SERVICE-AUTH
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/auth/**
+
+            - id: AUTH-SERVICE-USUARIOS
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/usuarios/**
+
+            - id: AUTH-SERVICE-ADMIN
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/admin/**
+
+            - id: FARMACIA-SERVICE
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/**
+
+application:
+  security:
+    jwt:
+      secret-key: farmacia-daw2-cibertec-proyecto-secret-key-2024-segura
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
