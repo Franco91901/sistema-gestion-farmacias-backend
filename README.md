@@ -136,7 +136,7 @@ Servicio SOAP de anuncios. Usa la misma instancia de **MySQL** que auth-service 
 
 | BD | Motor | Puerto | Usado por |
 |---|---|---|---|
-| `bd_auth` | MySQL 8 | 3306 | auth-service, soapAnuncio-service |
+| `bd_auth` | MySQL 8 | 3307 | auth-service, soapAnuncio-service |
 | `bd_farmacia` | PostgreSQL 16 | 5432 | farmacia-service |
 | `bd_notificaciones` | MongoDB 7 | 27017 | notificaciones-service |
 
